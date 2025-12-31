@@ -46,11 +46,11 @@
                     <span class="heart-icon pulse">&#10084;</span>
                 </div>
                 <div class="loading-text">
-                    <p class="loading-title">Analizando tu ECG...</p>
-                    <p class="loading-subtitle">Detectando picos R y calculando HRV</p>
+                    <p id="loading-step" class="loading-title">Cargando archivo...</p>
+                    <p id="loading-percent" class="loading-percent">0%</p>
                 </div>
                 <div class="loading-progress">
-                    <div class="progress-bar"></div>
+                    <div id="progress-bar" class="progress-bar"></div>
                 </div>
             </div>
         </section>
@@ -71,17 +71,17 @@
                 <div id="stress-indicator" class="stress-indicator">
                     <!-- Gauge Circular -->
                     <div class="gauge-container">
-                        <svg class="gauge" viewBox="0 0 200 120">
+                        <svg class="gauge" viewBox="0 0 200 140">
                             <!-- Fondo del gauge -->
-                            <path class="gauge-bg" d="M 20 100 A 80 80 0 0 1 180 100" />
+                            <path class="gauge-bg" d="M 20 110 A 80 80 0 0 1 180 110" />
                             <!-- Arco de progreso -->
-                            <path id="gauge-progress" class="gauge-progress" d="M 20 100 A 80 80 0 0 1 180 100" />
-                            <!-- Marcas -->
-                            <text x="15" y="115" class="gauge-label">0</text>
-                            <text x="55" y="45" class="gauge-label">25</text>
-                            <text x="95" y="25" class="gauge-label">50</text>
-                            <text x="135" y="45" class="gauge-label">75</text>
-                            <text x="175" y="115" class="gauge-label">100</text>
+                            <path id="gauge-progress" class="gauge-progress" d="M 20 110 A 80 80 0 0 1 180 110" />
+                            <!-- Marcas exteriores -->
+                            <text x="5" y="125" class="gauge-label">0</text>
+                            <text x="30" y="35" class="gauge-label">25</text>
+                            <text x="90" y="10" class="gauge-label">50</text>
+                            <text x="152" y="35" class="gauge-label">75</text>
+                            <text x="178" y="125" class="gauge-label">100</text>
                         </svg>
                         <div class="gauge-center">
                             <span id="stress-emoji" class="stress-emoji">&#128522;</span>
@@ -366,6 +366,7 @@
         <footer>
             <p>HRV Analyzer v2.0 | Analisis de Variabilidad de Frecuencia Cardiaca</p>
             <p class="disclaimer">Este analisis es solo informativo y no sustituye el consejo medico profesional.</p>
+            <p class="creator">Creado por Splotify</p>
         </footer>
     </div>
 

@@ -358,26 +358,29 @@ header h1 {
     margin-bottom: 10px;
 }
 
-.loading-subtitle {
-    color: var(--text-muted);
-    font-size: 1rem;
+.loading-percent {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin: 15px 0;
 }
 
 .loading-progress {
     width: 100%;
-    max-width: 300px;
-    height: 6px;
+    max-width: 350px;
+    height: 10px;
     background: var(--bg-tertiary);
     border-radius: 10px;
-    margin: 30px auto 0;
+    margin: 20px auto 0;
     overflow: hidden;
 }
 
 .progress-bar {
     height: 100%;
+    width: 0%;
     background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
     border-radius: 10px;
-    animation: progressBar 2s ease-in-out infinite;
+    transition: width 0.3s ease-out;
 }
 
 /* ========================================
@@ -399,8 +402,8 @@ header h1 {
 
 .gauge-container {
     position: relative;
-    width: 280px;
-    height: 160px;
+    width: 300px;
+    height: 190px;
     margin: 0 auto 20px;
 }
 
@@ -432,14 +435,14 @@ header h1 {
 .gauge-progress.alto { stroke: var(--danger-color); }
 
 .gauge-label {
-    fill: var(--text-dim);
-    font-size: 10px;
-    font-weight: 500;
+    fill: var(--text-color);
+    font-size: 16px;
+    font-weight: 700;
 }
 
 .gauge-center {
     position: absolute;
-    top: 50%;
+    top: 55%;
     left: 50%;
     transform: translate(-50%, -20%);
     text-align: center;
@@ -954,6 +957,13 @@ footer {
     opacity: 0.7;
 }
 
+.creator {
+    font-size: 0.85rem;
+    margin-top: 15px;
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
 /* ========================================
    Utility
    ======================================== */
@@ -963,7 +973,7 @@ footer {
 }
 
 /* ========================================
-   Responsive
+   Responsive - Tablets
    ======================================== */
 
 @media (max-width: 768px) {
@@ -972,29 +982,42 @@ footer {
     }
 
     header h1 {
-        font-size: 2rem;
+        font-size: 1.8rem;
     }
 
     .logo-heart {
-        font-size: 2.5rem;
+        font-size: 2rem;
+    }
+
+    .subtitle {
+        font-size: 1rem;
     }
 
     .drop-zone {
-        padding: 40px 20px;
+        padding: 35px 20px;
     }
 
     .upload-icon-container {
-        width: 80px;
-        height: 80px;
+        width: 70px;
+        height: 70px;
     }
 
     .upload-icon {
-        width: 40px;
-        height: 40px;
+        width: 35px;
+        height: 35px;
+    }
+
+    .upload-title {
+        font-size: 1.1rem;
+    }
+
+    .upload-subtitle {
+        font-size: 0.9rem;
     }
 
     .metrics-grid {
         grid-template-columns: 1fr;
+        gap: 20px;
     }
 
     .plots-container {
@@ -1002,8 +1025,12 @@ footer {
     }
 
     .gauge-container {
-        width: 220px;
-        height: 130px;
+        width: 240px;
+        height: 160px;
+    }
+
+    .gauge-label {
+        font-size: 14px;
     }
 
     .stress-emoji {
@@ -1011,26 +1038,384 @@ footer {
     }
 
     .stress-score {
-        font-size: 2rem;
+        font-size: 1.8rem;
+    }
+
+    .stress-level {
+        font-size: 1.4rem;
+    }
+
+    .card {
+        padding: 20px;
+        margin-bottom: 15px;
+    }
+
+    .card h2 {
+        font-size: 1.2rem;
+        margin-bottom: 15px;
     }
 
     .metric {
-        flex-wrap: wrap;
+        padding: 12px;
+        gap: 10px;
     }
 
-    .metric-info {
-        width: 100%;
-        order: 1;
+    .metric-icon-container {
+        width: 38px;
+        height: 38px;
     }
 
-    .metric-value-container {
-        order: 2;
-        margin-left: auto;
+    .metric-emoji {
+        font-size: 1.2rem;
+    }
+
+    .metric-value {
+        font-size: 1.2rem;
+    }
+
+    .metric-label {
+        font-size: 0.85rem;
     }
 
     .modal-content {
-        padding: 25px;
-        margin: 15px;
+        padding: 20px;
+        margin: 10px;
+    }
+
+    .btn-primary {
+        padding: 15px 25px;
+        font-size: 1rem;
+    }
+
+    .loading-percent {
+        font-size: 2rem;
+    }
+}
+
+/* ========================================
+   Responsive - Moviles
+   ======================================== */
+
+@media (max-width: 480px) {
+    .container {
+        padding: 10px;
+    }
+
+    header {
+        margin-bottom: 20px;
+        padding: 15px 0;
+    }
+
+    .logo-container {
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    header h1 {
+        font-size: 1.5rem;
+    }
+
+    .logo-heart {
+        font-size: 1.8rem;
+    }
+
+    .subtitle {
+        font-size: 0.9rem;
+    }
+
+    .card {
+        padding: 15px;
+        border-radius: 15px;
+        margin-bottom: 12px;
+    }
+
+    .card h2 {
+        font-size: 1.1rem;
+        gap: 8px;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+    }
+
+    .section-icon {
+        font-size: 1.1rem;
+    }
+
+    /* Drop Zone */
+    .drop-zone {
+        padding: 25px 15px;
+        border-radius: 15px;
+    }
+
+    .upload-icon-container {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 5px;
+    }
+
+    .upload-icon {
+        width: 30px;
+        height: 30px;
+    }
+
+    .upload-title {
+        font-size: 1rem;
+    }
+
+    .upload-subtitle {
+        font-size: 0.85rem;
+    }
+
+    .formats-badge {
+        gap: 6px;
+        margin-top: 10px;
+    }
+
+    .formats-badge span {
+        padding: 6px 12px;
+        font-size: 0.75rem;
+    }
+
+    /* Loading */
+    .loading-content {
+        padding: 30px 15px;
+    }
+
+    .heart-icon {
+        font-size: 3.5rem;
+    }
+
+    .loading-title {
+        font-size: 1.1rem;
+    }
+
+    .loading-percent {
+        font-size: 1.8rem;
+        margin: 10px 0;
+    }
+
+    .loading-progress {
+        max-width: 280px;
+        height: 8px;
+    }
+
+    /* Gauge */
+    .stress-indicator {
+        padding: 10px;
+    }
+
+    .gauge-container {
+        width: 200px;
+        height: 140px;
+    }
+
+    .gauge-label {
+        font-size: 12px;
+    }
+
+    .gauge-center {
+        top: 50%;
+    }
+
+    .stress-emoji {
+        font-size: 2rem;
+        margin-bottom: 2px;
+    }
+
+    .stress-score {
+        font-size: 1.5rem;
+    }
+
+    .stress-level {
+        font-size: 1.2rem;
+        margin: 10px 0;
+        letter-spacing: 1px;
+    }
+
+    .stress-description {
+        font-size: 0.95rem;
+    }
+
+    /* Metrics */
+    .metric-group {
+        padding: 15px;
+        border-radius: 12px;
+    }
+
+    .metric-group h3 {
+        font-size: 1rem;
+        margin-bottom: 15px;
+    }
+
+    .metric {
+        padding: 10px;
+        border-radius: 10px;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .metric-icon-container {
+        width: 35px;
+        height: 35px;
+        border-radius: 8px;
+    }
+
+    .metric-emoji {
+        font-size: 1.1rem;
+    }
+
+    .metric-label {
+        font-size: 0.8rem;
+    }
+
+    .metric-value {
+        font-size: 1.1rem;
+    }
+
+    .metric-unit {
+        font-size: 0.75rem;
+    }
+
+    .metric-status {
+        font-size: 1rem;
+        margin-left: 5px;
+        min-width: 20px;
+    }
+
+    .info-btn {
+        width: 18px;
+        height: 18px;
+    }
+
+    .info-icon {
+        font-size: 0.65rem;
+    }
+
+    /* Interpretation */
+    .interpretation {
+        padding: 15px;
+    }
+
+    .interpretation p {
+        padding: 12px;
+        padding-left: 15px;
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+
+    /* Plots */
+    .plots-container {
+        gap: 15px;
+    }
+
+    .plot-wrapper {
+        padding: 15px;
+        border-radius: 12px;
+    }
+
+    .plot-header {
+        margin-bottom: 10px;
+    }
+
+    .plot-header h3 {
+        font-size: 0.95rem;
+    }
+
+    /* Buttons */
+    .btn-primary {
+        padding: 14px 20px;
+        font-size: 0.95rem;
+        max-width: 250px;
+        margin: 25px auto;
+    }
+
+    .btn-icon {
+        font-size: 1.1rem;
+    }
+
+    .btn-secondary {
+        padding: 12px 20px;
+        font-size: 0.9rem;
+    }
+
+    /* Error */
+    .error-content {
+        padding: 30px 15px;
+    }
+
+    .error-emoji {
+        font-size: 3.5rem;
+    }
+
+    .error-content h3 {
+        font-size: 1.2rem;
+    }
+
+    .error-content p {
+        font-size: 0.95rem;
+    }
+
+    /* Modal */
+    .modal-content {
+        padding: 20px 15px;
+        margin: 10px;
+        border-radius: 15px;
+        max-height: 80vh;
+    }
+
+    .modal-close {
+        width: 35px;
+        height: 35px;
+        font-size: 1.5rem;
+        top: 10px;
+        right: 10px;
+    }
+
+    .modal-header {
+        gap: 10px;
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+    }
+
+    .modal-icon {
+        font-size: 2rem;
+    }
+
+    .modal-header h3 {
+        font-size: 1.2rem;
+    }
+
+    .modal-body {
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+
+    .modal-body h4 {
+        font-size: 1rem;
+        margin: 15px 0 8px;
+    }
+
+    .modal-body .range-indicator {
+        padding: 10px 12px;
+        gap: 8px;
+    }
+
+    .modal-body .range-indicator .emoji {
+        font-size: 1.1rem;
+    }
+
+    /* Footer */
+    footer {
+        padding: 25px 10px;
+        font-size: 0.8rem;
+    }
+
+    .disclaimer {
+        font-size: 0.7rem;
+    }
+
+    .creator {
+        font-size: 0.75rem;
+        margin-top: 10px;
     }
 }
 

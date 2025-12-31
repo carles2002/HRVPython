@@ -255,6 +255,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Escape') closeModal();
     });
 
+    // Pasos del proceso con porcentajes
+    const progressSteps = [
+        { percent: 10, text: 'Cargando archivo...' },
+        { percent: 25, text: 'Extrayendo imagen del ECG...' },
+        { percent: 40, text: 'Procesando senal ECG...' },
+        { percent: 55, text: 'Detectando picos R...' },
+        { percent: 70, text: 'Calculando metricas HRV...' },
+        { percent: 85, text: 'Analizando dominios de frecuencia...' },
+        { percent: 95, text: 'Generando visualizaciones...' }
+    ];
+
+    let progressInterval = null;
+    let currentStepIndex = 0;
+
     /**
      * Procesa el archivo seleccionado
      */
@@ -268,6 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         showLoading();
+        startProgressSimulation();
 
         const formData = new FormData();
         formData.append('file', file);
@@ -278,16 +293,68 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .then(response => response.json())
         .then(data => {
-            if (data.error) {
-                showError(data.error);
-            } else {
-                showResults(data);
-            }
+            stopProgressSimulation();
+            completeProgress(() => {
+                if (data.error) {
+                    showError(data.error);
+                } else {
+                    showResults(data);
+                }
+            });
         })
         .catch(error => {
+            stopProgressSimulation();
             console.error('Error:', error);
             showError('Error de conexion. Asegurate de que el servidor esta funcionando.');
         });
+    }
+
+    /**
+     * Inicia la simulacion de progreso
+     */
+    function startProgressSimulation() {
+        currentStepIndex = 0;
+        updateProgress(progressSteps[0].percent, progressSteps[0].text);
+
+        progressInterval = setInterval(() => {
+            currentStepIndex++;
+            if (currentStepIndex < progressSteps.length) {
+                updateProgress(progressSteps[currentStepIndex].percent, progressSteps[currentStepIndex].text);
+            } else {
+                stopProgressSimulation();
+            }
+        }, 1200);
+    }
+
+    /**
+     * Detiene la simulacion de progreso
+     */
+    function stopProgressSimulation() {
+        if (progressInterval) {
+            clearInterval(progressInterval);
+            progressInterval = null;
+        }
+    }
+
+    /**
+     * Actualiza la barra de progreso y el texto
+     */
+    function updateProgress(percent, text) {
+        const progressBar = document.getElementById('progress-bar');
+        const loadingStep = document.getElementById('loading-step');
+        const loadingPercent = document.getElementById('loading-percent');
+
+        if (progressBar) progressBar.style.width = percent + '%';
+        if (loadingStep) loadingStep.textContent = text;
+        if (loadingPercent) loadingPercent.textContent = percent + '%';
+    }
+
+    /**
+     * Completa el progreso al 100% y ejecuta callback
+     */
+    function completeProgress(callback) {
+        updateProgress(100, 'Completado!');
+        setTimeout(callback, 400);
     }
 
     /**
@@ -298,6 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
         errorSection.classList.add('hidden');
         resultsSection.classList.add('hidden');
         loadingSection.classList.remove('hidden');
+        updateProgress(0, 'Iniciando...');
     }
 
     /**
