@@ -1,8 +1,22 @@
-flask>=3.0.0
-neurokit2>=0.2.7
-numpy>=1.24.0
-opencv-python>=4.8.0
-PyMuPDF>=1.23.0
-matplotlib>=3.8.0
-scipy>=1.11.0
-Pillow>=10.0.0
+# Web Framework
+flask==3.1.0
+werkzeug==3.1.3
+
+# Production WSGI Server
+gunicorn==23.0.0
+
+# Scientific Computing
+numpy==2.2.5
+scipy==1.15.1
+matplotlib==3.10.8
+
+# Image Processing
+opencv-python-headless==4.11.0.86
+Pillow==11.1.0
+PyMuPDF==1.26.7
+
+# ECG/HRV Analysis
+neurokit2==0.2.12
+
+# Environment Variables Support
+python-dotenv==1.0.1

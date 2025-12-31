@@ -11,9 +11,19 @@ from werkzeug.utils import secure_filename
 from ecg_processor import ECGProcessor
 from hrv_analyzer import HRVAnalyzer
 
+# Environment configuration
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(__file__), 'uploads')
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
+
+# Secret key from environment (required for sessions)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-CHANGE-IN-PRODUCTION')
+
+# Upload folder - use /tmp on cloud platforms (ephemeral filesystem)
+UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', '/tmp/uploads')
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# Max file size (16MB)
+MAX_CONTENT_LENGTH = int(os.environ.get('MAX_CONTENT_LENGTH', 16 * 1024 * 1024))
+app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg'}
 
@@ -23,6 +33,15 @@ def allowed_file(filename):
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/health')
+def health():
+    """Health check endpoint for monitoring"""
+    return jsonify({
+        'status': 'healthy',
+        'service': 'hrv-analyzer',
+        'version': '2.0'
+    }), 200
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -84,8 +103,14 @@ def analyze_ecg(filepath):
     }
 
 if __name__ == '__main__':
+    # Only for local development - production uses gunicorn
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('FLASK_ENV') != 'production'
+
     print("=" * 50)
     print("HRV Analyzer - Servidor iniciado")
-    print("Abre http://localhost:5000 en tu navegador")
+    print(f"Abre http://localhost:{port} en tu navegador")
+    print(f"Modo: {'DESARROLLO' if debug else 'PRODUCCION'}")
     print("=" * 50)
-    app.run(debug=True, host='0.0.0.0', port=5000)
+
+    app.run(debug=debug, host='0.0.0.0', port=port)
