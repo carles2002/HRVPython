@@ -988,12 +988,21 @@ document.addEventListener('DOMContentLoaded', () => {
         pasteZone.classList.remove('focused');
     });
 
-    // Click en boton de pegar (usa Clipboard API)
+    // Click en boton de pegar (usa Clipboard API con fallback a selector de archivos)
     pasteBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
 
+        // Detectar si es movil
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+        // En movil, abrir directamente el selector de archivos (mas fiable)
+        if (isMobile) {
+            fileInput.click();
+            return;
+        }
+
         try {
-            // Intentar usar Clipboard API
+            // Intentar usar Clipboard API (solo en desktop)
             if (navigator.clipboard && navigator.clipboard.read) {
                 const clipboardItems = await navigator.clipboard.read();
 
@@ -1006,17 +1015,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
 
-                alert('No hay imagen en el portapapeles. Copia una imagen primero.');
+                // No hay imagen, abrir selector como alternativa
+                fileInput.click();
             } else {
-                // Fallback: informar al usuario que use Ctrl+V
-                alert('Tu navegador no soporta acceso directo al portapapeles.\nUsa Ctrl+V (o Cmd+V en Mac) para pegar la imagen.');
-                pasteZone.focus();
+                // Fallback: abrir selector de archivos
+                fileInput.click();
             }
         } catch (err) {
             console.log('Error accediendo al portapapeles:', err);
-            // Fallback: informar al usuario que use Ctrl+V
-            alert('No se pudo acceder al portapapeles.\nUsa Ctrl+V (o Cmd+V en Mac) para pegar la imagen.');
-            pasteZone.focus();
+            // Fallback: abrir selector de archivos
+            fileInput.click();
         }
     });
 

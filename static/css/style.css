@@ -1506,6 +1506,20 @@ footer {
     gap: 8px;
 }
 
+/* Mostrar texto segun dispositivo */
+.btn-text-mobile {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .btn-text-desktop {
+        display: none;
+    }
+    .btn-text-mobile {
+        display: inline;
+    }
+}
+
 .paste-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 5px 20px rgba(255, 107, 53, 0.4);
