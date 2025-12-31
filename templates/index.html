@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HRV Analyzer - Analisis de Variabilidad Cardiaca</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-container">
+                <span class="logo-heart">&#10084;</span>
+                <h1>HRV Analyzer</h1>
+            </div>
+            <p class="subtitle">Analiza tu ECG y descubre tu nivel de estres</p>
+        </header>
+
+        <!-- Zona de Upload -->
+        <section id="upload-section" class="card upload-card">
+            <div id="drop-zone" class="drop-zone">
+                <div class="drop-zone-content">
+                    <div class="upload-icon-container">
+                        <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                    </div>
+                    <p class="upload-title">Arrastra tu archivo ECG aqui</p>
+                    <p class="upload-subtitle">o haz clic para seleccionar</p>
+                    <div class="formats-badge">
+                        <span>PDF</span>
+                        <span>PNG</span>
+                        <span>JPG</span>
+                    </div>
+                </div>
+                <input type="file" id="file-input" accept=".pdf,.png,.jpg,.jpeg" hidden>
+            </div>
+        </section>
+
+        <!-- Loading -->
+        <section id="loading-section" class="card hidden">
+            <div class="loading-content">
+                <div class="loading-heart">
+                    <span class="heart-icon pulse">&#10084;</span>
+                </div>
+                <div class="loading-text">
+                    <p class="loading-title">Analizando tu ECG...</p>
+                    <p class="loading-subtitle">Detectando picos R y calculando HRV</p>
+                </div>
+                <div class="loading-progress">
+                    <div class="progress-bar"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Resultados -->
+        <section id="results-section" class="hidden">
+            <!-- Indicador de Estres - Gauge Circular -->
+            <div class="card stress-card">
+                <div class="stress-header">
+                    <h2>
+                        <span class="section-icon">&#128200;</span>
+                        Nivel de Estres
+                        <button class="info-btn" data-metric="stress" title="Mas informacion">
+                            <span class="info-icon">i</span>
+                        </button>
+                    </h2>
+                </div>
+                <div id="stress-indicator" class="stress-indicator">
+                    <!-- Gauge Circular -->
+                    <div class="gauge-container">
+                        <svg class="gauge" viewBox="0 0 200 120">
+                            <!-- Fondo del gauge -->
+                            <path class="gauge-bg" d="M 20 100 A 80 80 0 0 1 180 100" />
+                            <!-- Arco de progreso -->
+                            <path id="gauge-progress" class="gauge-progress" d="M 20 100 A 80 80 0 0 1 180 100" />
+                            <!-- Marcas -->
+                            <text x="15" y="115" class="gauge-label">0</text>
+                            <text x="55" y="45" class="gauge-label">25</text>
+                            <text x="95" y="25" class="gauge-label">50</text>
+                            <text x="135" y="45" class="gauge-label">75</text>
+                            <text x="175" y="115" class="gauge-label">100</text>
+                        </svg>
+                        <div class="gauge-center">
+                            <span id="stress-emoji" class="stress-emoji">&#128522;</span>
+                            <span id="stress-score" class="stress-score">--</span>
+                        </div>
+                    </div>
+                    <div id="stress-level" class="stress-level">--</div>
+                    <p id="stress-description" class="stress-description"></p>
+                </div>
+            </div>
+
+            <!-- Metricas principales -->
+            <div class="card metrics-card">
+                <h2>
+                    <span class="section-icon">&#128202;</span>
+                    Metricas de HRV
+                </h2>
+                <div class="metrics-grid">
+                    <!-- Dominio Temporal -->
+                    <div class="metric-group">
+                        <h3>
+                            <span class="group-icon">&#9201;</span>
+                            Dominio Temporal
+                        </h3>
+
+                        <div class="metric" data-metric="hr">
+                            <div class="metric-icon-container">
+                                <span id="hr-icon" class="metric-emoji heartbeat">&#10084;</span>
+                            </div>
+                            <div class="metric-info">
+                                <span class="metric-label">Frecuencia Cardiaca</span>
+                                <button class="info-btn" data-metric="hr" title="Mas informacion">
+                                    <span class="info-icon">i</span>
+                                </button>
+                            </div>
+                            <div class="metric-value-container">
+                                <span id="hr-mean" class="metric-value">--</span>
+                                <span class="metric-unit">bpm</span>
+                            </div>
+                            <span id="hr-status" class="metric-status"></span>
+                        </div>
+
+                        <div class="metric" data-metric="sdnn">
+                            <div class="metric-icon-container">
+                                <span class="metric-emoji">&#128200;</span>
+                            </div>
+                            <div class="metric-info">
+                                <span class="metric-label">SDNN</span>
+                                <button class="info-btn" data-metric="sdnn" title="Mas informacion">
+                                    <span class="info-icon">i</span>
+                                </button>
+                            </div>
+                            <div class="metric-value-container">
+                                <span id="sdnn" class="metric-value">--</span>
+                                <span class="metric-unit">ms</span>
+                            </div>
+                            <span id="sdnn-status" class="metric-status"></span>
+                        </div>
+
+                        <div class="metric" data-metric="rmssd">
+                            <div class="metric-icon-container">
+                                <span class="metric-emoji">&#128147;</span>
+                            </div>
+                            <div class="metric-info">
+                                <span class="metric-label">RMSSD</span>
+                                <button class="info-btn" data-metric="rmssd" title="Mas informacion">
+                                    <span class="info-icon">i</span>
+                                </button>
+                            </div>
+                            <div class="metric-value-container">
+                                <span id="rmssd" class="metric-value">--</span>
+                                <span class="metric-unit">ms</span>
+                            </div>
+                            <span id="rmssd-status" class="metric-status"></span>
+                        </div>
+
+                        <div class="metric" data-metric="pnn50">
+                            <div class="metric-icon-container">
+                                <span class="metric-emoji">&#128202;</span>
+                            </div>
+                            <div class="metric-info">
+                                <span class="metric-label">pNN50</span>
+                                <button class="info-btn" data-metric="pnn50" title="Mas informacion">
+                                    <span class="info-icon">i</span>
+                                </button>
+                            </div>
+                            <div class="metric-value-container">
+                                <span id="pnn50" class="metric-value">--</span>
+                                <span class="metric-unit">%</span>
+                            </div>
+                            <span id="pnn50-status" class="metric-status"></span>
+                        </div>
+
+                        <div class="metric" data-metric="rr">
+                            <div class="metric-icon-container">
+                                <span class="metric-emoji">&#9200;</span>
+                            </div>
+                            <div class="metric-info">
+                                <span class="metric-label">RR Medio</span>
+                                <button class="info-btn" data-metric="rr" title="Mas informacion">
+                                    <span class="info-icon">i</span>
+                                </button>
+                            </div>
+                            <div class="metric-value-container">
+                                <span id="rr-mean" class="metric-value">--</span>
+                                <span class="metric-unit">ms</span>
+                            </div>
+                            <span id="rr-status" class="metric-status"></span>
+                        </div>
+                    </div>
+
+                    <!-- Dominio Frecuencial -->
+                    <div class="metric-group">
+                        <h3>
+                            <span class="group-icon">&#127897;</span>
+                            Dominio Frecuencial
+                        </h3>
+
+                        <div class="metric" data-metric="lf">
+                            <div class="metric-icon-container">
+                                <span class="metric-emoji">&#128293;</span>
+                            </div>
+                            <div class="metric-info">
+                                <span class="metric-label">LF Power</span>
+                                <button class="info-btn" data-metric="lf" title="Mas informacion">
+                                    <span class="info-icon">i</span>
+                                </button>
+                            </div>
+                            <div class="metric-value-container">
+                                <span id="lf-power" class="metric-value">--</span>
+                                <span class="metric-unit">ms<sup>2</sup></span>
+                            </div>
+                            <span id="lf-status" class="metric-status"></span>
+                        </div>
+
+                        <div class="metric" data-metric="hf">
+                            <div class="metric-icon-container">
+                                <span class="metric-emoji">&#127808;</span>
+                            </div>
+                            <div class="metric-info">
+                                <span class="metric-label">HF Power</span>
+                                <button class="info-btn" data-metric="hf" title="Mas informacion">
+                                    <span class="info-icon">i</span>
+                                </button>
+                            </div>
+                            <div class="metric-value-container">
+                                <span id="hf-power" class="metric-value">--</span>
+                                <span class="metric-unit">ms<sup>2</sup></span>
+                            </div>
+                            <span id="hf-status" class="metric-status"></span>
+                        </div>
+
+                        <div class="metric" data-metric="lfhf">
+                            <div class="metric-icon-container">
+                                <span class="metric-emoji">&#9878;</span>
+                            </div>
+                            <div class="metric-info">
+                                <span class="metric-label">LF/HF Ratio</span>
+                                <button class="info-btn" data-metric="lfhf" title="Mas informacion">
+                                    <span class="info-icon">i</span>
+                                </button>
+                            </div>
+                            <div class="metric-value-container">
+                                <span id="lf-hf-ratio" class="metric-value">--</span>
+                                <span class="metric-unit"></span>
+                            </div>
+                            <span id="lfhf-status" class="metric-status"></span>
+                        </div>
+
+                        <div class="metric" data-metric="lfnu">
+                            <div class="metric-icon-container">
+                                <span class="metric-emoji">&#128308;</span>
+                            </div>
+                            <div class="metric-info">
+                                <span class="metric-label">LF (normalizado)</span>
+                                <button class="info-btn" data-metric="lfnu" title="Mas informacion">
+                                    <span class="info-icon">i</span>
+                                </button>
+                            </div>
+                            <div class="metric-value-container">
+                                <span id="lf-nu" class="metric-value">--</span>
+                                <span class="metric-unit">%</span>
+                            </div>
+                        </div>
+
+                        <div class="metric" data-metric="hfnu">
+                            <div class="metric-icon-container">
+                                <span class="metric-emoji">&#128994;</span>
+                            </div>
+                            <div class="metric-info">
+                                <span class="metric-label">HF (normalizado)</span>
+                                <button class="info-btn" data-metric="hfnu" title="Mas informacion">
+                                    <span class="info-icon">i</span>
+                                </button>
+                            </div>
+                            <div class="metric-value-container">
+                                <span id="hf-nu" class="metric-value">--</span>
+                                <span class="metric-unit">%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interpretacion -->
+            <div class="card interpretation-card">
+                <h2>
+                    <span class="section-icon">&#128214;</span>
+                    Interpretacion
+                </h2>
+                <div id="interpretation" class="interpretation"></div>
+            </div>
+
+            <!-- Graficos -->
+            <div class="card plots-card">
+                <h2>
+                    <span class="section-icon">&#128208;</span>
+                    Visualizaciones
+                </h2>
+                <div class="plots-container">
+                    <div class="plot-wrapper">
+                        <div class="plot-header">
+                            <h3>ECG Procesado</h3>
+                            <button class="info-btn" data-metric="ecg" title="Mas informacion">
+                                <span class="info-icon">i</span>
+                            </button>
+                        </div>
+                        <img id="ecg-plot" alt="ECG" class="plot-image">
+                    </div>
+                    <div class="plot-wrapper">
+                        <div class="plot-header">
+                            <h3>Grafico de Poincare</h3>
+                            <button class="info-btn" data-metric="poincare" title="Mas informacion">
+                                <span class="info-icon">i</span>
+                            </button>
+                        </div>
+                        <img id="poincare-plot" alt="Poincare" class="plot-image">
+                    </div>
+                    <div class="plot-wrapper">
+                        <div class="plot-header">
+                            <h3>Histograma R-R</h3>
+                            <button class="info-btn" data-metric="histogram" title="Mas informacion">
+                                <span class="info-icon">i</span>
+                            </button>
+                        </div>
+                        <img id="histogram-plot" alt="Histograma" class="plot-image">
+                    </div>
+                    <div class="plot-wrapper">
+                        <div class="plot-header">
+                            <h3>Espectro de Frecuencias</h3>
+                            <button class="info-btn" data-metric="spectrum" title="Mas informacion">
+                                <span class="info-icon">i</span>
+                            </button>
+                        </div>
+                        <img id="frequency-plot" alt="Frecuencias" class="plot-image">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Boton nuevo analisis -->
+            <button id="new-analysis-btn" class="btn-primary">
+                <span class="btn-icon">&#10227;</span>
+                Nuevo Analisis
+            </button>
+        </section>
+
+        <!-- Error -->
+        <section id="error-section" class="card hidden">
+            <div class="error-content">
+                <div class="error-icon-container">
+                    <span class="error-emoji">&#128533;</span>
+                </div>
+                <h3>Error en el Analisis</h3>
+                <p id="error-message"></p>
+                <button id="retry-btn" class="btn-secondary">
+                    <span class="btn-icon">&#10227;</span>
+                    Intentar de nuevo
+                </button>
+            </div>
+        </section>
+
+        <footer>
+            <p>HRV Analyzer v2.0 | Analisis de Variabilidad de Frecuencia Cardiaca</p>
+            <p class="disclaimer">Este analisis es solo informativo y no sustituye el consejo medico profesional.</p>
+        </footer>
+    </div>
+
+    <!-- Modal de Informacion -->
+    <div id="info-modal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <button class="modal-close">&times;</button>
+            <div class="modal-header">
+                <span id="modal-icon" class="modal-icon"></span>
+                <h3 id="modal-title"></h3>
+            </div>
+            <div id="modal-body" class="modal-body"></div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
