@@ -37,6 +37,22 @@
                 </div>
                 <input type="file" id="file-input" accept=".pdf,.png,.jpg,.jpeg" hidden>
             </div>
+
+            <!-- Zona para pegar imagen del portapapeles -->
+            <div class="paste-zone" id="paste-zone" tabindex="0">
+                <div class="paste-content">
+                    <div class="paste-icon">&#128203;</div>
+                    <p class="paste-text">O pega una imagen aqui</p>
+                    <p class="paste-hint">Ctrl+V en PC / Pulsa el boton en movil</p>
+                    <button type="button" class="paste-btn" id="paste-btn">
+                        <span>&#128247;</span> Pegar del portapapeles
+                    </button>
+                </div>
+                <div class="paste-preview-container hidden" id="paste-preview-container">
+                    <img id="paste-preview" class="paste-preview" alt="Preview">
+                    <button type="button" class="paste-remove" id="paste-remove">&times;</button>
+                </div>
+            </div>
         </section>
 
         <!-- Loading -->
@@ -107,7 +123,7 @@
                             Dominio Temporal
                         </h3>
 
-                        <div class="metric" data-metric="hr">
+                        <div class="metric clickable-metric" data-metric="hr">
                             <div class="metric-icon-container">
                                 <span id="hr-icon" class="metric-emoji heartbeat">&#10084;</span>
                             </div>
@@ -122,9 +138,10 @@
                                 <span class="metric-unit">bpm</span>
                             </div>
                             <span id="hr-status" class="metric-status"></span>
+                            <span class="metric-chart-hint">&#128200;</span>
                         </div>
 
-                        <div class="metric" data-metric="sdnn">
+                        <div class="metric clickable-metric" data-metric="sdnn">
                             <div class="metric-icon-container">
                                 <span class="metric-emoji">&#128200;</span>
                             </div>
@@ -139,9 +156,10 @@
                                 <span class="metric-unit">ms</span>
                             </div>
                             <span id="sdnn-status" class="metric-status"></span>
+                            <span class="metric-chart-hint">&#128200;</span>
                         </div>
 
-                        <div class="metric" data-metric="rmssd">
+                        <div class="metric clickable-metric" data-metric="rmssd">
                             <div class="metric-icon-container">
                                 <span class="metric-emoji">&#128147;</span>
                             </div>
@@ -156,9 +174,10 @@
                                 <span class="metric-unit">ms</span>
                             </div>
                             <span id="rmssd-status" class="metric-status"></span>
+                            <span class="metric-chart-hint">&#128200;</span>
                         </div>
 
-                        <div class="metric" data-metric="pnn50">
+                        <div class="metric clickable-metric" data-metric="pnn50">
                             <div class="metric-icon-container">
                                 <span class="metric-emoji">&#128202;</span>
                             </div>
@@ -173,9 +192,10 @@
                                 <span class="metric-unit">%</span>
                             </div>
                             <span id="pnn50-status" class="metric-status"></span>
+                            <span class="metric-chart-hint">&#128200;</span>
                         </div>
 
-                        <div class="metric" data-metric="rr">
+                        <div class="metric clickable-metric" data-metric="rr">
                             <div class="metric-icon-container">
                                 <span class="metric-emoji">&#9200;</span>
                             </div>
@@ -190,6 +210,7 @@
                                 <span class="metric-unit">ms</span>
                             </div>
                             <span id="rr-status" class="metric-status"></span>
+                            <span class="metric-chart-hint">&#128200;</span>
                         </div>
                     </div>
 
@@ -200,7 +221,7 @@
                             Dominio Frecuencial
                         </h3>
 
-                        <div class="metric" data-metric="lf">
+                        <div class="metric clickable-metric" data-metric="lf">
                             <div class="metric-icon-container">
                                 <span class="metric-emoji">&#128293;</span>
                             </div>
@@ -215,9 +236,10 @@
                                 <span class="metric-unit">ms<sup>2</sup></span>
                             </div>
                             <span id="lf-status" class="metric-status"></span>
+                            <span class="metric-chart-hint">&#128200;</span>
                         </div>
 
-                        <div class="metric" data-metric="hf">
+                        <div class="metric clickable-metric" data-metric="hf">
                             <div class="metric-icon-container">
                                 <span class="metric-emoji">&#127808;</span>
                             </div>
@@ -232,9 +254,10 @@
                                 <span class="metric-unit">ms<sup>2</sup></span>
                             </div>
                             <span id="hf-status" class="metric-status"></span>
+                            <span class="metric-chart-hint">&#128200;</span>
                         </div>
 
-                        <div class="metric" data-metric="lfhf">
+                        <div class="metric clickable-metric" data-metric="lfhf">
                             <div class="metric-icon-container">
                                 <span class="metric-emoji">&#9878;</span>
                             </div>
@@ -249,9 +272,10 @@
                                 <span class="metric-unit"></span>
                             </div>
                             <span id="lfhf-status" class="metric-status"></span>
+                            <span class="metric-chart-hint">&#128200;</span>
                         </div>
 
-                        <div class="metric" data-metric="lfnu">
+                        <div class="metric clickable-metric" data-metric="lfnu">
                             <div class="metric-icon-container">
                                 <span class="metric-emoji">&#128308;</span>
                             </div>
@@ -265,9 +289,10 @@
                                 <span id="lf-nu" class="metric-value">--</span>
                                 <span class="metric-unit">%</span>
                             </div>
+                            <span class="metric-chart-hint">&#128200;</span>
                         </div>
 
-                        <div class="metric" data-metric="hfnu">
+                        <div class="metric clickable-metric" data-metric="hfnu">
                             <div class="metric-icon-container">
                                 <span class="metric-emoji">&#128994;</span>
                             </div>
@@ -281,6 +306,7 @@
                                 <span id="hf-nu" class="metric-value">--</span>
                                 <span class="metric-unit">%</span>
                             </div>
+                            <span class="metric-chart-hint">&#128200;</span>
                         </div>
                     </div>
                 </div>
@@ -383,6 +409,42 @@
         </div>
     </div>
 
+    <!-- Modal de Grafico de Evolucion Temporal -->
+    <div id="evolution-modal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-chart">
+            <button class="modal-close">&times;</button>
+            <div class="modal-header">
+                <span id="evolution-modal-icon" class="modal-icon"></span>
+                <h3 id="evolution-modal-title"></h3>
+            </div>
+            <div class="modal-body">
+                <div id="evolution-chart" class="evolution-chart-container"></div>
+                <div id="evolution-stats" class="evolution-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Minimo</span>
+                        <span id="stat-min" class="stat-value">--</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Maximo</span>
+                        <span id="stat-max" class="stat-value">--</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Promedio</span>
+                        <span id="stat-avg" class="stat-value">--</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Variacion</span>
+                        <span id="stat-var" class="stat-value">--</span>
+                    </div>
+                </div>
+                <p id="evolution-description" class="evolution-description"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ApexCharts para graficos interactivos -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

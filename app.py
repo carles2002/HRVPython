@@ -99,7 +99,8 @@ def analyze_ecg(filepath):
             'histogram': rr_histogram,
             'frequency': frequency_plot
         },
-        'interpretation': hrv_results['interpretation']
+        'interpretation': hrv_results['interpretation'],
+        'time_series': hrv_results['time_series']
     }
 
 if __name__ == '__main__':

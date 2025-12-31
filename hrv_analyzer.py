@@ -62,13 +62,17 @@ class HRVAnalyzer:
         # 8. Generar interpretacion
         interpretation = self._generate_interpretation(time_metrics, freq_metrics, stress_info)
 
+        # 9. Calcular series temporales para graficos de evolucion
+        time_series = self._calculate_time_series()
+
         return {
             'metrics': {
                 'time_domain': time_metrics,
                 'frequency_domain': freq_metrics
             },
             'stress': stress_info,
-            'interpretation': interpretation
+            'interpretation': interpretation,
+            'time_series': time_series
         }
 
     def _detect_r_peaks_manual(self, ecg_signal):
@@ -97,6 +101,213 @@ class HRVAnalyzer:
         mask = mask & (rr_intervals >= lower_bound) & (rr_intervals <= upper_bound)
 
         return rr_intervals[mask]
+
+    def _calculate_time_series(self):
+        """
+        Calcula series temporales para visualizacion de evolucion de metricas.
+        Cada serie tiene timestamps (en segundos) y valores.
+        """
+        rr = self.rr_intervals
+
+        # Crear eje temporal acumulativo (posicion de cada latido)
+        time_axis = np.cumsum(rr) / 1000  # Convertir a segundos
+        time_axis = time_axis - time_axis[0]  # Empezar en 0
+
+        time_series = {}
+
+        # 1. HR instantaneo (bpm) - valor por cada latido
+        hr_instant = 60000 / rr
+        time_series['hr'] = {
+            'timestamps': time_axis.tolist(),
+            'values': hr_instant.tolist(),
+            'label': 'Frecuencia Cardiaca',
+            'unit': 'bpm',
+            'color': '#EF4444'
+        }
+
+        # 2. RR instantaneo (ms)
+        time_series['rr'] = {
+            'timestamps': time_axis.tolist(),
+            'values': rr.tolist(),
+            'label': 'Intervalo R-R',
+            'unit': 'ms',
+            'color': '#3B82F6'
+        }
+
+        # 3-5. Metricas con ventana deslizante (SDNN, RMSSD, pNN50)
+        window_size = max(8, len(rr) // 5)  # Ventana adaptativa (~5s)
+        step = max(1, window_size // 3)  # Solapamiento 66%
+
+        sdnn_series = []
+        rmssd_series = []
+        pnn50_series = []
+        window_times = []
+
+        for i in range(0, len(rr) - window_size + 1, step):
+            window = rr[i:i + window_size]
+            window_time = time_axis[i + window_size // 2]  # Centro de ventana
+            window_times.append(float(window_time))
+
+            # SDNN
+            sdnn_series.append(float(np.std(window, ddof=1)))
+
+            # RMSSD
+            diff_rr = np.diff(window)
+            rmssd_series.append(float(np.sqrt(np.mean(diff_rr ** 2))))
+
+            # pNN50
+            nn50 = np.sum(np.abs(diff_rr) > 50)
+            pnn50_series.append(float((nn50 / len(diff_rr)) * 100))
+
+        time_series['sdnn'] = {
+            'timestamps': window_times,
+            'values': sdnn_series,
+            'label': 'SDNN',
+            'unit': 'ms',
+            'color': '#10B981'
+        }
+
+        time_series['rmssd'] = {
+            'timestamps': window_times,
+            'values': rmssd_series,
+            'label': 'RMSSD',
+            'unit': 'ms',
+            'color': '#8B5CF6'
+        }
+
+        time_series['pnn50'] = {
+            'timestamps': window_times,
+            'values': pnn50_series,
+            'label': 'pNN50',
+            'unit': '%',
+            'color': '#F59E0B'
+        }
+
+        # 6-10. Metricas frecuenciales (segmentos)
+        freq_series = self._calculate_frequency_time_series(time_axis)
+        time_series.update(freq_series)
+
+        return time_series
+
+    def _calculate_frequency_time_series(self, time_axis):
+        """
+        Calcula evolucion de metricas frecuenciales usando segmentos.
+        """
+        rr = self.rr_intervals
+
+        # Necesitamos al menos ~10 segundos por segmento para analisis frecuencial
+        total_duration = float(time_axis[-1])
+        segment_duration = min(10, total_duration / 3)  # 3 segmentos minimo
+
+        if total_duration < 12:  # Muy corto para segmentar
+            return {}
+
+        segment_times = []
+        lf_series = []
+        hf_series = []
+        ratio_series = []
+        lf_nu_series = []
+        hf_nu_series = []
+
+        # Usar ventanas solapadas
+        step = segment_duration / 2
+        current_time = 0
+
+        while current_time + segment_duration <= total_duration:
+            # Encontrar indices del segmento
+            mask = (time_axis >= current_time) & (time_axis < current_time + segment_duration)
+            segment_rr = rr[mask]
+
+            if len(segment_rr) >= 8:  # Minimo para analisis
+                freq_metrics = self._analyze_segment_frequency(segment_rr)
+
+                segment_times.append(float(current_time + segment_duration / 2))
+                lf_series.append(freq_metrics['lf_power'])
+                hf_series.append(freq_metrics['hf_power'])
+                ratio_series.append(freq_metrics['lf_hf_ratio'])
+                lf_nu_series.append(freq_metrics['lf_nu'])
+                hf_nu_series.append(freq_metrics['hf_nu'])
+
+            current_time += step
+
+        if len(segment_times) == 0:
+            return {}
+
+        return {
+            'lf': {
+                'timestamps': segment_times,
+                'values': lf_series,
+                'label': 'LF Power',
+                'unit': 'ms²',
+                'color': '#EF4444'
+            },
+            'hf': {
+                'timestamps': segment_times,
+                'values': hf_series,
+                'label': 'HF Power',
+                'unit': 'ms²',
+                'color': '#10B981'
+            },
+            'lfhf': {
+                'timestamps': segment_times,
+                'values': ratio_series,
+                'label': 'LF/HF Ratio',
+                'unit': '',
+                'color': '#F59E0B'
+            },
+            'lfnu': {
+                'timestamps': segment_times,
+                'values': lf_nu_series,
+                'label': 'LF Normalizado',
+                'unit': '%',
+                'color': '#EF4444'
+            },
+            'hfnu': {
+                'timestamps': segment_times,
+                'values': hf_nu_series,
+                'label': 'HF Normalizado',
+                'unit': '%',
+                'color': '#10B981'
+            }
+        }
+
+    def _analyze_segment_frequency(self, rr_segment):
+        """Analiza metricas frecuenciales de un segmento RR"""
+        # Interpolar a senal uniforme
+        time_rr = np.cumsum(rr_segment) / 1000
+        time_rr = time_rr - time_rr[0]
+
+        fs_interp = 4  # Hz
+        time_interp = np.arange(0, time_rr[-1], 1/fs_interp)
+
+        if len(time_interp) < 4:
+            return {'lf_power': 0, 'hf_power': 0, 'lf_hf_ratio': 0, 'lf_nu': 0, 'hf_nu': 0}
+
+        rr_interp = np.interp(time_interp, time_rr, rr_segment)
+        rr_detrend = scipy_signal.detrend(rr_interp)
+
+        nperseg = min(len(rr_detrend), 64)
+        frequencies, psd = scipy_signal.welch(rr_detrend, fs=fs_interp, nperseg=nperseg)
+
+        # Calcular potencia en bandas
+        lf_mask = (frequencies >= 0.04) & (frequencies < 0.15)
+        hf_mask = (frequencies >= 0.15) & (frequencies < 0.4)
+
+        lf_power = float(np.trapz(psd[lf_mask], frequencies[lf_mask])) if np.any(lf_mask) else 0
+        hf_power = float(np.trapz(psd[hf_mask], frequencies[hf_mask])) if np.any(hf_mask) else 0
+
+        lf_hf_ratio = lf_power / hf_power if hf_power > 0 else 0
+        lf_hf_sum = lf_power + hf_power
+        lf_nu = (lf_power / lf_hf_sum) * 100 if lf_hf_sum > 0 else 0
+        hf_nu = (hf_power / lf_hf_sum) * 100 if lf_hf_sum > 0 else 0
+
+        return {
+            'lf_power': round(lf_power, 2),
+            'hf_power': round(hf_power, 2),
+            'lf_hf_ratio': round(lf_hf_ratio, 2),
+            'lf_nu': round(lf_nu, 1),
+            'hf_nu': round(hf_nu, 1)
+        }
 
     def _calculate_time_domain_metrics(self):
         """Calcula metricas de HRV en dominio temporal"""

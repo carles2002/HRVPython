@@ -3,6 +3,90 @@
  * Con modales informativos, animaciones y visualizaciones mejoradas
  */
 
+// Variables globales para graficos de evolucion
+let currentTimeSeries = null;
+let evolutionChart = null;
+
+// Configuracion base de ApexCharts
+const apexChartBaseConfig = {
+    chart: {
+        type: 'line',
+        height: 320,
+        background: 'transparent',
+        toolbar: {
+            show: true,
+            tools: {
+                download: true,
+                selection: true,
+                zoom: true,
+                zoomin: true,
+                zoomout: true,
+                pan: true,
+                reset: true
+            }
+        },
+        animations: {
+            enabled: true,
+            easing: 'easeinout',
+            speed: 800
+        },
+        zoom: {
+            enabled: true,
+            type: 'x'
+        }
+    },
+    theme: {
+        mode: 'dark',
+        palette: 'palette1'
+    },
+    stroke: {
+        curve: 'smooth',
+        width: 3
+    },
+    markers: {
+        size: 4,
+        hover: {
+            size: 7
+        }
+    },
+    grid: {
+        borderColor: '#334155',
+        strokeDashArray: 4
+    },
+    xaxis: {
+        type: 'numeric',
+        title: {
+            text: 'Tiempo (segundos)',
+            style: {
+                color: '#94A3B8'
+            }
+        },
+        labels: {
+            style: {
+                colors: '#94A3B8'
+            },
+            formatter: (val) => val.toFixed(1) + 's'
+        }
+    },
+    yaxis: {
+        labels: {
+            style: {
+                colors: '#94A3B8'
+            },
+            formatter: (val) => val.toFixed(1)
+        }
+    },
+    tooltip: {
+        theme: 'dark',
+        x: {
+            formatter: (val) => `Tiempo: ${val.toFixed(2)}s`
+        }
+    },
+    legend: {
+        show: false
+    }
+};
+
 // Base de datos de informacion de metricas
 const metricInfo = {
     // Dominio Temporal
@@ -375,6 +459,9 @@ document.addEventListener('DOMContentLoaded', () => {
         loadingSection.classList.add('hidden');
         resultsSection.classList.remove('hidden');
 
+        // Guardar series temporales para graficos de evolucion
+        currentTimeSeries = data.time_series || null;
+
         // Actualizar indicador de estres con gauge
         updateStressGauge(data.stress);
 
@@ -619,6 +706,16 @@ document.addEventListener('DOMContentLoaded', () => {
             gaugeProgress.style.strokeDashoffset = '251.2';
         }
 
+        // Limpiar datos de series temporales
+        currentTimeSeries = null;
+        if (evolutionChart) {
+            evolutionChart.destroy();
+            evolutionChart = null;
+        }
+
+        // Reset zona de pegado
+        resetPasteZone();
+
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -628,4 +725,311 @@ document.addEventListener('DOMContentLoaded', () => {
     function formatText(text) {
         return text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
     }
+
+    // ========================================
+    // FUNCIONES PARA GRAFICOS DE EVOLUCION
+    // ========================================
+
+    /**
+     * Abre el modal de evolucion temporal para una metrica
+     */
+    function openEvolutionModal(metricKey) {
+        if (!currentTimeSeries) {
+            console.warn('No hay datos de series temporales disponibles');
+            return;
+        }
+
+        const seriesData = currentTimeSeries[metricKey];
+
+        if (!seriesData || !seriesData.timestamps || seriesData.timestamps.length === 0) {
+            console.warn(`No hay datos de evolucion para: ${metricKey}`);
+            alert('No hay suficientes datos para mostrar la evolucion de esta metrica.');
+            return;
+        }
+
+        const info = metricInfo[metricKey];
+        const evolutionModal = document.getElementById('evolution-modal');
+
+        // Actualizar header del modal
+        document.getElementById('evolution-modal-icon').innerHTML = info ? info.icon : '📊';
+        document.getElementById('evolution-modal-title').textContent =
+            `Evolucion de ${seriesData.label}`;
+
+        // Calcular estadisticas
+        const values = seriesData.values;
+        const min = Math.min(...values);
+        const max = Math.max(...values);
+        const avg = values.reduce((a, b) => a + b, 0) / values.length;
+        const variation = avg > 0 ? ((max - min) / avg * 100) : 0;
+
+        document.getElementById('stat-min').textContent =
+            `${min.toFixed(1)} ${seriesData.unit}`;
+        document.getElementById('stat-max').textContent =
+            `${max.toFixed(1)} ${seriesData.unit}`;
+        document.getElementById('stat-avg').textContent =
+            `${avg.toFixed(1)} ${seriesData.unit}`;
+        document.getElementById('stat-var').textContent =
+            `${variation.toFixed(1)}%`;
+
+        // Descripcion interpretativa
+        document.getElementById('evolution-description').textContent =
+            generateEvolutionDescription(metricKey, seriesData, min, max, avg, variation);
+
+        // Renderizar grafico
+        renderEvolutionChart(seriesData);
+
+        // Mostrar modal
+        evolutionModal.classList.add('active');
+    }
+
+    /**
+     * Genera descripcion interpretativa de la evolucion
+     */
+    function generateEvolutionDescription(metricKey, seriesData, min, max, avg, variation) {
+        const descriptions = {
+            'hr': `Tu frecuencia cardiaca vario entre ${min.toFixed(0)} y ${max.toFixed(0)} bpm durante la medicion. ` +
+                  (variation > 15 ? 'La variacion es notable, lo cual indica buena adaptabilidad cardiaca.' :
+                   'La variacion es moderada, indicando un ritmo relativamente estable.'),
+            'sdnn': `El SDNN fluctuo entre ${min.toFixed(1)} y ${max.toFixed(1)} ms. ` +
+                    'Valores mas altos indican momentos de mayor variabilidad cardiaca general.',
+            'rmssd': `El RMSSD vario entre ${min.toFixed(1)} y ${max.toFixed(1)} ms. ` +
+                     'Picos altos indican momentos de mayor actividad parasimpatica (relajacion).',
+            'pnn50': `El pNN50 oscilo entre ${min.toFixed(1)}% y ${max.toFixed(1)}%. ` +
+                     'Valores mas altos reflejan mayor variabilidad latido a latido.',
+            'rr': `Los intervalos R-R variaron entre ${min.toFixed(0)} y ${max.toFixed(0)} ms. ` +
+                  'Esta variacion natural es indicador de un corazon saludable.',
+            'lf': `La potencia LF fluctuo durante la medicion. ` +
+                  'Aumentos pueden indicar momentos de mayor activacion simpatica (estres/alerta).',
+            'hf': `La potencia HF vario a lo largo del tiempo. ` +
+                  'Valores altos coinciden con momentos de mayor relajacion y actividad parasimpatica.',
+            'lfhf': `El ratio LF/HF cambio entre ${min.toFixed(2)} y ${max.toFixed(2)}. ` +
+                    'Valores > 2 indican predominancia simpatica, < 1 predominancia parasimpatica.',
+            'lfnu': `El LF normalizado vario entre ${min.toFixed(1)}% y ${max.toFixed(1)}%. ` +
+                    'Refleja los cambios en el balance autonomico durante la medicion.',
+            'hfnu': `El HF normalizado oscilo entre ${min.toFixed(1)}% y ${max.toFixed(1)}%. ` +
+                    'Valores altos indican predominancia del sistema de relajacion.'
+        };
+
+        return descriptions[metricKey] ||
+               `La metrica ${seriesData.label} vario un ${variation.toFixed(1)}% durante la medicion.`;
+    }
+
+    /**
+     * Renderiza el grafico de evolucion con ApexCharts
+     */
+    function renderEvolutionChart(seriesData) {
+        const chartContainer = document.getElementById('evolution-chart');
+
+        // Destruir grafico anterior si existe
+        if (evolutionChart) {
+            evolutionChart.destroy();
+        }
+
+        // Preparar datos para ApexCharts
+        const chartData = seriesData.timestamps.map((time, index) => ({
+            x: time,
+            y: seriesData.values[index]
+        }));
+
+        // Calcular promedio para la linea de anotacion
+        const avgValue = seriesData.values.reduce((a, b) => a + b, 0) / seriesData.values.length;
+
+        // Configuracion especifica para esta metrica
+        const config = {
+            ...apexChartBaseConfig,
+            series: [{
+                name: seriesData.label,
+                data: chartData
+            }],
+            colors: [seriesData.color],
+            yaxis: {
+                ...apexChartBaseConfig.yaxis,
+                title: {
+                    text: `${seriesData.label} (${seriesData.unit})`,
+                    style: {
+                        color: '#94A3B8'
+                    }
+                }
+            },
+            annotations: {
+                yaxis: [{
+                    y: avgValue,
+                    borderColor: '#94A3B8',
+                    strokeDashArray: 5,
+                    label: {
+                        text: 'Promedio',
+                        style: {
+                            color: '#F1F5F9',
+                            background: '#334155'
+                        }
+                    }
+                }]
+            }
+        };
+
+        evolutionChart = new ApexCharts(chartContainer, config);
+        evolutionChart.render();
+    }
+
+    /**
+     * Cierra el modal de evolucion
+     */
+    function closeEvolutionModal() {
+        const evolutionModal = document.getElementById('evolution-modal');
+        evolutionModal.classList.remove('active');
+
+        // Destruir grafico para liberar memoria
+        if (evolutionChart) {
+            evolutionChart.destroy();
+            evolutionChart = null;
+        }
+    }
+
+    // Event listeners para modal de evolucion
+    const evolutionModal = document.getElementById('evolution-modal');
+    const evolutionModalClose = evolutionModal.querySelector('.modal-close');
+    const evolutionModalOverlay = evolutionModal.querySelector('.modal-overlay');
+
+    evolutionModalClose.addEventListener('click', closeEvolutionModal);
+    evolutionModalOverlay.addEventListener('click', closeEvolutionModal);
+
+    // Event listeners para metricas clickeables
+    document.querySelectorAll('.clickable-metric').forEach(metric => {
+        metric.addEventListener('click', (e) => {
+            // No abrir si se hizo clic en el boton de info
+            if (e.target.closest('.info-btn')) return;
+
+            const metricKey = metric.getAttribute('data-metric');
+            if (metricKey && currentTimeSeries) {
+                openEvolutionModal(metricKey);
+            }
+        });
+    });
+
+    // Actualizar listener de Escape para cerrar ambos modales
+    document.removeEventListener('keydown', arguments.callee);
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeModal();
+            closeEvolutionModal();
+        }
+    });
+
+    // ========================================
+    // FUNCIONES PARA PEGAR DEL PORTAPAPELES
+    // ========================================
+
+    const pasteZone = document.getElementById('paste-zone');
+    const pasteBtn = document.getElementById('paste-btn');
+    const pastePreviewContainer = document.getElementById('paste-preview-container');
+    const pastePreview = document.getElementById('paste-preview');
+    const pasteRemove = document.getElementById('paste-remove');
+    const pasteContent = pasteZone.querySelector('.paste-content');
+
+    /**
+     * Resetea la zona de pegado
+     */
+    function resetPasteZone() {
+        pasteZone.classList.remove('has-image');
+        pastePreviewContainer.classList.add('hidden');
+        pasteContent.classList.remove('hidden');
+        pastePreview.src = '';
+    }
+
+    /**
+     * Maneja una imagen pegada
+     */
+    function handlePastedImage(blob) {
+        // Crear File desde Blob
+        const file = new File([blob], 'pasted-image.png', { type: blob.type });
+
+        // Mostrar preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            pastePreview.src = e.target.result;
+            pasteContent.classList.add('hidden');
+            pastePreviewContainer.classList.remove('hidden');
+            pasteZone.classList.add('has-image');
+        };
+        reader.readAsDataURL(blob);
+
+        // Procesar como archivo normal
+        handleFile(file);
+    }
+
+    /**
+     * Maneja el evento paste global (Ctrl+V)
+     */
+    function handlePaste(e) {
+        const items = e.clipboardData?.items;
+        if (!items) return;
+
+        for (const item of items) {
+            if (item.type.startsWith('image/')) {
+                e.preventDefault();
+                const blob = item.getAsFile();
+                if (blob) {
+                    handlePastedImage(blob);
+                }
+                return;
+            }
+        }
+    }
+
+    // Evento paste global (Ctrl+V en cualquier parte)
+    document.addEventListener('paste', handlePaste);
+
+    // Evento focus en zona de pegado
+    pasteZone.addEventListener('focus', () => {
+        pasteZone.classList.add('focused');
+    });
+
+    pasteZone.addEventListener('blur', () => {
+        pasteZone.classList.remove('focused');
+    });
+
+    // Click en boton de pegar (usa Clipboard API)
+    pasteBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+
+        try {
+            // Intentar usar Clipboard API
+            if (navigator.clipboard && navigator.clipboard.read) {
+                const clipboardItems = await navigator.clipboard.read();
+
+                for (const item of clipboardItems) {
+                    const imageType = item.types.find(t => t.startsWith('image/'));
+                    if (imageType) {
+                        const blob = await item.getType(imageType);
+                        handlePastedImage(blob);
+                        return;
+                    }
+                }
+
+                alert('No hay imagen en el portapapeles. Copia una imagen primero.');
+            } else {
+                // Fallback: informar al usuario que use Ctrl+V
+                alert('Tu navegador no soporta acceso directo al portapapeles.\nUsa Ctrl+V (o Cmd+V en Mac) para pegar la imagen.');
+                pasteZone.focus();
+            }
+        } catch (err) {
+            console.log('Error accediendo al portapapeles:', err);
+            // Fallback: informar al usuario que use Ctrl+V
+            alert('No se pudo acceder al portapapeles.\nUsa Ctrl+V (o Cmd+V en Mac) para pegar la imagen.');
+            pasteZone.focus();
+        }
+    });
+
+    // Click en zona de pegado (focus para recibir paste)
+    pasteZone.addEventListener('click', (e) => {
+        if (e.target === pasteBtn || e.target.closest('.paste-btn')) return;
+        if (e.target === pasteRemove || e.target.closest('.paste-remove')) return;
+        pasteZone.focus();
+    });
+
+    // Boton para eliminar imagen pegada
+    pasteRemove.addEventListener('click', (e) => {
+        e.stopPropagation();
+        resetPasteZone();
+    });
 });
