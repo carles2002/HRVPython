@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(dir \"c:\\\\REPO\\\\aitesting\\\\HRV\")",
-      "Bash(dir /s /b \"c:\\\\REPO\\\\aitesting\\\\HRV\")"
+      "Bash(dir /s /b \"c:\\\\REPO\\\\aitesting\\\\HRV\")",
+      "Bash(dir:*)",
+      "Bash(findstr:*)"
     ]
   }
 }

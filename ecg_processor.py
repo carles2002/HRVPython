@@ -12,6 +12,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter1d
 from scipy.interpolate import interp1d
+from scipy.signal import butter, filtfilt
 
 
 class ECGProcessor:
@@ -95,22 +96,24 @@ class ECGProcessor:
             # Si no se detectan filas, intentar con toda la imagen
             rows = [(0, image.shape[0])]
 
-        # Extraer senal de cada fila y concatenar
+        # Extraer senal de cada fila, normalizar cada una, y concatenar
         all_signals = []
         for row_start, row_end in rows:
             row_mask = mask[row_start:row_end, :]
             row_signal = self._extract_signal_from_row(row_mask)
             if len(row_signal) > 0:
+                # Normalizar cada fila individualmente para corregir baseline
+                row_signal = self._normalize_row_signal(row_signal)
                 all_signals.append(row_signal)
 
         if not all_signals:
             raise ValueError("No se pudo extraer la senal ECG de la imagen")
 
-        # Concatenar todas las senales
+        # Concatenar todas las senales (ya con baseline corregido)
         ecg_signal = np.concatenate(all_signals)
 
-        # Normalizar la senal
-        ecg_signal = self._normalize_signal(ecg_signal)
+        # Normalizar amplitud global y aplicar filtros
+        ecg_signal = self._normalize_amplitude(ecg_signal)
 
         # Interpolar a frecuencia de muestreo constante
         # Asumiendo 30 segundos de grabacion total
@@ -188,23 +191,36 @@ class ECGProcessor:
 
         return np.array(signal)
 
-    def _normalize_signal(self, signal):
-        """Normaliza la senal ECG"""
+    def _normalize_row_signal(self, signal):
+        """Normaliza una fila individual del ECG para corregir baseline"""
         if len(signal) == 0:
             return signal
 
         # Invertir (en imagen Y crece hacia abajo)
         signal = -signal
 
-        # Centrar en cero
+        # Centrar en cero (baseline correction por fila)
         signal = signal - np.mean(signal)
+
+        return signal
+
+    def _normalize_amplitude(self, signal):
+        """Normaliza la amplitud global de la senal ECG y aplica filtros"""
+        if len(signal) == 0:
+            return signal
+
+        # Filtro paso-alto para eliminar baseline drift residual (0.5 Hz)
+        nyquist = self.target_sampling_rate / 2
+        low_cutoff = 0.5 / nyquist
+        b, a = butter(2, low_cutoff, btype='high')
+        signal = filtfilt(b, a, signal)
 
         # Normalizar a rango [-1, 1]
         max_val = np.max(np.abs(signal))
         if max_val > 0:
             signal = signal / max_val
 
-        # Aplicar filtro suave para eliminar ruido
+        # Aplicar filtro suave para eliminar ruido de alta frecuencia
         signal = gaussian_filter1d(signal, sigma=2)
 
         return signal
